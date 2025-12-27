@@ -7,7 +7,7 @@ from sqlalchemy import cast, String, Index
 from models import Product, Cart, CartItem, Users, PriceHistory
 from schemas import ProductoCreate, ProductoUpdate
 from fastapi import HTTPException
-from datetime import datetime
+from datetime import datetime, UTC
 from pydantic import BaseModel, Field, ConfigDict
 from app.core.security import hash_password, verify_password
 from app.core.exceptions import NotFoundError
@@ -239,10 +239,10 @@ def cambiar_estado_carrito(db: Session, cart_id: int, new_status: str):
         return None, "Carrito no encontrado"
     
     cart.status = new_status
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     if new_status == "completed":
-        cart.completed_at = datetime.utcnow()
+        cart.completed_at = datetime.now(UTC)
     elif new_status == "cancelled":
         cart.cancelled_at = now
     
@@ -318,7 +318,7 @@ def actualizar_precio(db: Session, product_id: int, new_price: float, reason: st
         old_price=old_price,
         new_price=producto.Price,
         reason=reason,
-        changed_at=datetime.utcnow()
+        changed_at=datetime.now(UTC)
     )
     db.add(hist)
 

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
@@ -8,11 +8,11 @@ from schemas import CreateTicketRequest
 
 def generar_numero_ticket(db: Session) -> str:
     """Genera un número único de ticket: TKT-YYYYMMDD-NNNN"""
-    today = datetime.utcnow().strftime("%Y%m%d")
+    today = datetime.now(UTC).strftime("%Y%m%d")
     
     # Contar tickets del día
     count = db.query(SaleTicket).filter(
-        func.date(SaleTicket.created_at) == datetime.utcnow().date()
+        func.date(SaleTicket.created_at) == datetime.now(UTC).date()
     ).count()
     
     numero = f"TKT-{today}-{count + 1:04d}"
@@ -84,7 +84,7 @@ def crear_ticket(
         amount_paid=data.amount_paid,
         change_given=change_given,
         status="completed",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(UTC)
     )
     
     db.add(ticket)
@@ -110,7 +110,7 @@ def crear_ticket(
     
     # Marcar carrito como completado
     cart.status = "completed"
-    cart.completed_at = datetime.utcnow()
+    cart.completed_at = datetime.now(UTC)
     
     # Actualizar caja registradora si existe
     if cash_register_id:
@@ -163,7 +163,7 @@ def cancelar_ticket(
     
     # Marcar como cancelado
     ticket.status = "cancelled"
-    ticket.cancelled_at = datetime.utcnow()
+    ticket.cancelled_at = datetime.now(UTC)
     ticket.cancelled_by = user_id
     ticket.cancellation_reason = reason
     

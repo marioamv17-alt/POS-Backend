@@ -71,9 +71,9 @@ class ProductoUpdate(BaseModel):
     barcode: str | int | None = Field(None, alias="Barcode")
     stock: int | None = Field(None, alias="Stock")
     min_stock: int | None = Field(None, alias="Min_Stock")
-    model_config = ConfigDict(populate_by_name=True)
-    Activo: int = Field(..., alias="Activo")
+    activo: int | None = Field(None, alias="Activo")
 
+    model_config = ConfigDict(populate_by_name=True)
 
 # ==================== CARRITO ====================
 class CartCreate(BaseModel):

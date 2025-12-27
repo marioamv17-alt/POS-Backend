@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
@@ -45,7 +45,7 @@ def crear_retiro(
         cash_before=efectivo_actual,
         cash_after=efectivo_despues,
         status="completed",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(UTC)
     )
     
     db.add(retiro)
@@ -93,7 +93,7 @@ def listar_retiros_del_dia(
 ) -> list[CashWithdrawal]:
     """Lista todos los retiros del día"""
     if not fecha:
-        fecha = datetime.utcnow().date()
+        fecha = datetime.now(UTC).date()
     
     return (
         db.query(CashWithdrawal)

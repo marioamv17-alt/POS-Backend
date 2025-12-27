@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
@@ -24,7 +24,7 @@ def abrir_caja(db: Session, user_id: int, data: OpenCashRegisterRequest) -> Cash
     # Crear nueva caja
     caja = CashRegister(
         user_id=user_id,
-        opened_at=datetime.utcnow(),
+        opened_at=datetime.now(UTC),
         initial_cash=data.initial_cash,
         current_cash=data.initial_cash,
         total_sales=Decimal('0.00'),
@@ -70,7 +70,7 @@ def cerrar_caja(
     difference = data.final_cash - expected_cash
     
     # Actualizar caja
-    caja.closed_at = datetime.utcnow()
+    caja.closed_at = datetime.now(UTC)
     caja.final_cash = data.final_cash
     caja.expected_cash = expected_cash
     caja.difference = difference
@@ -160,7 +160,7 @@ def obtener_resumen_caja(db: Session, cash_register_id: int) -> dict:
 def obtener_ventas_del_dia(db: Session, fecha: datetime | None = None) -> dict:
     """Obtiene el resumen de ventas del día"""
     if not fecha:
-        fecha = datetime.utcnow().date()
+        fecha = datetime.now(UTC).date()
     
     # Tickets del día
     tickets = db.query(SaleTicket).filter(

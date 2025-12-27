@@ -6,7 +6,7 @@ from models import Users
 from schemas import CreateWithdrawalRequest, CashWithdrawalSchema
 import crud_withdrawals
 import crud_cash_register
-from datetime import datetime
+from datetime import datetime, timezone as UTC
 
 router = APIRouter(prefix="/withdrawals", tags=["Retiros de Efectivo"])
 
@@ -189,7 +189,7 @@ def get_today_withdrawals(
     total_retirado = sum(float(r.amount) for r in retiros)
     
     return {
-        "fecha": datetime.utcnow().date().isoformat(),
+        "fecha": datetime.now(UTC).date().isoformat(),
         "total_withdrawals": len(retiros),
         "total_amount": total_retirado,
         "withdrawals": [

@@ -1,5 +1,5 @@
 from typing import Dict, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from decimal import Decimal
 from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
@@ -72,7 +72,7 @@ class SalesProjectionService:
             confidence_lower = projected_value * 0.85
             confidence_upper = projected_value * 1.15
             
-            target_date = datetime.now() + timedelta(days=30 * i)
+            target_date = datetime.now(UTC) + timedelta(days=30 * i)
             
             projections.append({
                 "month": target_date.strftime("%Y-%m"),
@@ -105,7 +105,7 @@ class SalesProjectionService:
                 historical_data,
                 trend
             ),
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now(UTC).isoformat()
         }
     
     def analyze_product_trends(self, top_n: int = 10) -> Dict:
@@ -117,7 +117,7 @@ class SalesProjectionService:
         """
         
         # Últimos 3 meses
-        three_months_ago = datetime.now() - timedelta(days=90)
+        three_months_ago = datetime.now(UTC) - timedelta(days=90)
         
         # Productos más vendidos
         top_products = (
@@ -168,13 +168,13 @@ class SalesProjectionService:
         return {
             "top_products": products_analysis,
             "analysis_period": "Últimos 3 meses",
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now(UTC).isoformat()
         }
     
     def _get_historical_monthly_sales(self, months: int = 12) -> List[Dict]:
         """Obtiene ventas mensuales históricas"""
         
-        start_date = datetime.now() - timedelta(days=30 * months)
+        start_date = datetime.now(UTC) - timedelta(days=30 * months)
         
         monthly_sales = (
             self.db.query(
@@ -205,7 +205,7 @@ class SalesProjectionService:
     def _get_product_monthly_sales(self, product_id: int, months: int = 6):
         """Ventas mensuales de un producto específico"""
         
-        start_date = datetime.now() - timedelta(days=30 * months)
+        start_date = datetime.now(UTC) - timedelta(days=30 * months)
         
         monthly_sales = (
             self.db.query(

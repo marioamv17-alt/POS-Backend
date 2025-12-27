@@ -1,5 +1,5 @@
 from typing import List, Dict
-from datetime import datetime
+from datetime import datetime, UTC
 import httpx
 from sqlalchemy.orm import Session
 from models import Product, Cart
@@ -226,7 +226,7 @@ async def chat(
     chatbot = ChatbotService(db)
     
     # Obtener o crear conversación
-    conv_id = data.conversation_id or f"conv_{datetime.now().timestamp()}"
+    conv_id = data.conversation_id or f"conv_{datetime.now(UTC).timestamp()}"
     history = conversations.get(conv_id, [])
     
     # Procesar mensaje

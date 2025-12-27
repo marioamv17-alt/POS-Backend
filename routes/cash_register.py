@@ -136,7 +136,7 @@ def get_register_summary(
 def list_cash_registers(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    status: str | None = Query(None, regex="^(open|closed)$"),
+    status: str | None = Query(None, pattern="^(open|closed)$"),
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
