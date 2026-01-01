@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
@@ -100,7 +100,7 @@ class CartItemSchema(BaseModel):
 class CartSchema(BaseModel):
     id: int
     status: str
-    created_at: datetime | None
+    created_at: Any | None
     items: list[CartItemSchema] = []
     total: Decimal | None = None
     model_config = ConfigDict(from_attributes=True)

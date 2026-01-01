@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, NUMERIC, ForeignKey, BigInteger,
 from datetime import datetime, UTC
 from database import Base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 class Users(Base):
     __tablename__ = "Users"
@@ -39,7 +40,7 @@ class Cart(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("Users.ID"), nullable=True)
     status = Column(Text, default="open")
-    created_at = Column(DateTime, default=datetime.now(UTC))
+    created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC)) # Actualización general
     completed_at = Column(DateTime, nullable=True)
     cancelled_at = Column(DateTime, nullable=True)

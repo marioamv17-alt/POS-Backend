@@ -1,5 +1,6 @@
 import bcrypt
-from sqlalchemy import or_, and_
+import re
+from sqlalchemy import or_, and_, func
 from decimal import Decimal
 from sqlalchemy.exc import IntegrityError 
 from sqlalchemy.orm import Session, joinedload
@@ -57,8 +58,11 @@ def update_user_role(db: Session, user_id: int, new_role: str) -> Users:
 def obtener_productos(db: Session, skip: int = 0, limit: int = 100) -> list[Product]:
     return db.query(Product).filter(Product.Activo == 1).offset(skip).limit(limit).all()
 
-def buscar_productos(db: Session, query: str) -> list[Product]:
-    # Validar longitud
+def buscar_productos(db: Session, query: str):
+    # Sanitizar entrada
+    if not re.match(r'^[\w\s\-\.]+$', query):
+        raise ValueError("Caracteres no válidos en búsqueda")
+    
     if len(query) > 100:
         raise ValueError("Query demasiado largo")
     
@@ -273,9 +277,9 @@ def buscar_carritos_avanzado(db: Session, fecha_inicio: datetime = None, fecha_f
     query = db.query(Cart).options(joinedload(Cart.items).joinedload(CartItem.product))
     
     if fecha_inicio:
-        query = query.filter(Cart.created_at >= fecha_inicio)
+       query = query.filter(func.date(Cart.created_at) >= fecha_inicio)
     if fecha_fin:
-        query = query.filter(Cart.created_at <= fecha_fin)
+        query = query.filter(func.date(Cart.created_at) <= fecha_fin)
     if status:
         query = query.filter(Cart.status == status)
         

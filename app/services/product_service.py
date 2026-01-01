@@ -1,29 +1,22 @@
-"""
-Service para lógica de negocio de productos.
-Capa de servicios - contiene reglas de negocio y validaciones.
-"""
-
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List, Dict, Optional
 from decimal import Decimal
 
-# Importar modelos
-from models import Product
+# 1. Corregir Importaciones de Modelos (Añadir PriceHistory)
+from models import Product, PriceHistory 
 
-# Importar schemas de Pydantic
+# 2. Importar utilidades de base de datos y caché
+from database import unit_of_work
+from app.core.cache import get_cached, set_cached
+
 from schemas import ProductoCreate, ProductoUpdate
-
-# Importar repository
 from app.repositories.product_repository import ProductRepository
-
-# Importar excepciones
 from app.core.exceptions import (
     NotFoundError, 
     DuplicateError, 
     ValidationError,
     InvalidOperationError
 )
-
 
 class ProductService:
     """
@@ -325,3 +318,40 @@ class ProductService:
         # Validar categoría
         if len(data.category) < 2:
             raise ValidationError("category", "La categoría debe tener al menos 2 caracteres")
+    def create_product_with_history(self, product_data: ProductoCreate):
+        with unit_of_work(self.db) as db:
+            product = self.repository.create(product_data)
+            
+            # Crear historial
+            history = PriceHistory(
+                product_id=product.Id,
+                old_price=0,
+                new_price=product.Price,
+                reason="Producto creado"
+            )
+            db.add(history)
+            
+            return product
+def get_inventory_summary(self) -> Dict:
+        """Obtiene un resumen del inventario con soporte de caché."""
+        cached = get_cached("inventory_summary")
+        if cached:
+            return cached
+        
+        # Implementación real en lugar de _calculate_summary()
+        total_products = self.repository.count_active()
+        low_stock_products = self.repository.get_low_stock_products()
+        categories = self.repository.count_by_category()
+        
+        summary = {
+            "total_products": total_products,
+            "low_stock_count": len(low_stock_products),
+            "categories_count": categories,
+            "low_stock_details": [
+                {"id": p.Id, "name": p.Product, "stock": p.Stock}
+                for p in low_stock_products[:5]
+            ]
+        }
+        
+        set_cached("inventory_summary", summary, ttl_seconds=60)
+        return summary

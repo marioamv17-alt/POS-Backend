@@ -1,7 +1,9 @@
+from contextlib import contextmanager
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
+
 load_dotenv()
 import os
 
@@ -18,3 +20,13 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@contextmanager
+def unit_of_work(db: Session):
+    """Context manager para asegurar transacciones ACID"""
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise

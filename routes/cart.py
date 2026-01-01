@@ -1,12 +1,7 @@
-"""
-Rutas de carritos usando Service Layer.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import Optional
-from datetime import datetime
-
+from typing import Optional, Any
+from datetime import date, datetime
 from database import get_db
 from app.core.security import get_current_user
 from app.services.cart_service import CartService
@@ -38,6 +33,75 @@ def crear_carrito_endpoint(
     except AppException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
+# ==================== BUSCAR CARRITOS ====================
+
+@router.get("/search")
+
+def buscar_carritos(
+
+    start_date: Optional[str] = Query(None, description="Fecha inicial (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Fecha final (YYYY-MM-DD)"),
+    status: Optional[str] = Query(None, pattern="^(open|completed|cancelled)$"),
+    min_total: Optional[float] = Query(None, ge=0),
+    user_id: Optional[int] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    Búsqueda avanzada de carritos con múltiples filtros.
+    **Filtros disponibles:**
+    - `start_date`, `end_date`: Rango de fechas
+    - `status`: Estado del carrito
+    - `min_total`: Total mínimo
+    - `user_id`: Usuario específico
+    """
+    try:
+        service = CartService(db)
+        # PROCESAMIENTO ROBUSTO DE FECHAS
+        start_datetime = None
+        end_datetime = None
+        if start_date:
+            # Tomamos solo YYYY-MM-DD e iniciamos a las 00:00:00
+            start_clean = start_date[:10]
+            start_datetime = datetime.strptime(start_clean, "%Y-%m-%d")
+        
+        if end_date:
+            # Tomamos solo YYYY-MM-DD para limpiar la "T" del frontend
+            end_clean = end_date[:10]
+            # IMPORTANTE: Usamos .replace para cubrir TODO el día
+            end_datetime = datetime.strptime(end_clean, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            )
+        carts = service.search_carts(
+            start_date=start_datetime,
+            end_date=end_datetime,
+            status=status,
+            min_total=min_total,
+            user_id=user_id,
+            skip=skip,
+            limit=limit
+        )
+        return {
+            "total": len(carts),
+            "carts": [
+                {
+                    "id": c.id,
+                    "status": c.status,
+                    "created_at": c.created_at.isoformat(),
+                    "items_count": len(c.items),
+                    "total": float(sum(i.subtotal for i in c.items))
+                }
+                for c in carts
+            ]
+        }
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de fecha inválido. Use YYYY-MM-DD"
+        )
+    except AppException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
 
 # ==================== AGREGAR ITEM ====================
 @router.post("/{cart_id}/items", response_model=CartItemSchema, status_code=201)
@@ -210,73 +274,5 @@ def cambiar_estado_carrito(
     
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
-    except AppException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message)
-
-
-# ==================== BUSCAR CARRITOS ====================
-@router.get("/search/advanced")
-def buscar_carritos(
-    start_date: Optional[str] = Query(None, description="Fecha inicial (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="Fecha final (YYYY-MM-DD)"),
-    status: Optional[str] = Query(None, pattern="^(open|completed|cancelled)$"),
-    min_total: Optional[float] = Query(None, ge=0),
-    user_id: Optional[int] = Query(None),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
-    db: Session = Depends(get_db)
-):
-    """
-    Búsqueda avanzada de carritos con múltiples filtros.
-    
-    **Filtros disponibles:**
-    - `start_date`, `end_date`: Rango de fechas
-    - `status`: Estado del carrito
-    - `min_total`: Total mínimo
-    - `user_id`: Usuario específico
-    """
-    try:
-        service = CartService(db)
-        
-        # Convertir fechas
-        start_datetime = None
-        end_datetime = None
-        
-        if start_date:
-            start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
-        
-        if end_date:
-            end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
-            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        
-        carts = service.search_carts(
-            start_date=start_datetime,
-            end_date=end_datetime,
-            status=status,
-            min_total=min_total,
-            user_id=user_id,
-            skip=skip,
-            limit=limit
-        )
-        
-        return {
-            "total": len(carts),
-            "carts": [
-                {
-                    "id": c.id,
-                    "status": c.status,
-                    "created_at": c.created_at.isoformat(),
-                    "items_count": len(c.items),
-                    "total": float(sum(i.subtotal for i in c.items))
-                }
-                for c in carts
-            ]
-        }
-    
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail="Formato de fecha inválido. Use YYYY-MM-DD"
-        )
     except AppException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)

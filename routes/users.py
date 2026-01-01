@@ -1,20 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from database import get_db
-from datetime import timedelta
 import crud
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+from datetime import timedelta
+from pydantic import BaseModel, Field
+
+# --- Importaciones de la App ---
+from database import get_db
+from models import Users
 from schemas import LoginRequest, RegisterRequest, UserSchema
+from app.core.logging_config import security_logger
 from app.core.security import (
     create_access_token, 
     get_current_user, 
     require_admin,
+    security,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from models import Users
-from pydantic import BaseModel, Field
+
+# --- Rate Limiting ---
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/users", tags=["Usuarios y Autenticación"])
 
+# --- Esquemas Locales ---
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
@@ -23,39 +34,72 @@ class TokenResponse(BaseModel):
 class UserRoleUpdate(BaseModel):
     role: str = Field(..., alias="Role")
 
-# ------------------ Registro ------------------
+# --- Funciones Auxiliares (Placeholders para que no den error) ---
+# Tip: Estas funciones deberían ir en app/core/security.py o un servicio aparte
+def is_account_locked(username: str) -> bool:
+    # Lógica de Redis o DB para verificar bloqueos
+    return False 
+
+def record_failed_login(username: str):
+    # Lógica para incrementar intentos fallidos
+    pass
+
+def reset_login_attempts(username: str):
+    # Lógica para limpiar intentos tras login exitoso
+    pass
+
+def revoke_token(token: str):
+    # Lógica para meter el token en una "Blacklist" (usualmente en Redis)
+    pass
+
+# ------------------ Endpoints ------------------
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """Registra un nuevo usuario (solo admin puede asignar roles)"""
     user = crud.create_user(db, request.username, request.password)
     return {"message": "Usuario creado exitosamente", "user_id": user.ID}
 
-# ------------------ Login ------------------
 @router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Autentica un usuario y devuelve un token JWT"""
-    user = crud.authenticate_user(db, request.username, request.password)
-    if not user:
+@limiter.limit("5/minute")
+def login(request: Request, data: LoginRequest, db: Session = Depends(get_db)):
+    # 1. Verificar si la cuenta está bloqueada
+    if is_account_locked(data.username):
+        security_logger.warning(f"Intento de login en cuenta bloqueada: {data.username}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Cuenta bloqueada temporalmente por seguridad."
         )
     
-    # Crear token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.Username, "role": user.Role},
-        expires_delta=access_token_expires
-    )
+    # 2. Autenticar
+    user = crud.authenticate_user(db, data.username, data.password)
     
-    user_data = UserSchema(ID=user.ID, Username=user.Username)
+    if not user:
+        record_failed_login(data.username)
+        security_logger.warning(f"Login fallido: {data.username} desde IP {request.client.host}")
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    # 3. Éxito: Resetear intentos y generar token
+    reset_login_attempts(data.username)
+    security_logger.info(f"Login exitoso: {user.Username}")
+    
+    access_token = create_access_token(
+        data={"sub": user.Username, "role": user.Role}
+    )
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": user_data
+        "user": UserSchema(ID=user.ID, Username=user.Username)
     }
+
+@router.post("/logout")
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: Users = Depends(get_current_user)
+):
+    token = credentials.credentials
+    revoke_token(token)
+    return {"message": "Sesión cerrada exitosamente"}
 
 # ------------------ Perfil del usuario actual ------------------
 @router.get("/me", response_model=UserSchema)
