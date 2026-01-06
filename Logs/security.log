@@ -1,0 +1,27 @@
+2026-01-01 14:26:31,276 - security - INFO - Login exitoso: testuser
+2026-01-01 14:26:31,665 - security - INFO - Login exitoso: testuser
+2026-01-01 14:26:32,022 - security - INFO - Login exitoso: testuser
+2026-01-01 14:26:32,375 - security - INFO - Login exitoso: testuser
+2026-01-01 14:26:32,729 - security - INFO - Login exitoso: testuser
+2026-01-01 14:28:21,693 - security - INFO - Login exitoso: testuser
+2026-01-01 14:28:22,055 - security - INFO - Login exitoso: testuser
+2026-01-01 14:28:22,405 - security - INFO - Login exitoso: testuser
+2026-01-01 14:28:22,763 - security - INFO - Login exitoso: testuser
+2026-01-01 14:28:23,120 - security - INFO - Login exitoso: testuser
+2026-01-01 14:48:06,389 - security - WARNING - Login fallido: admin desde IP 127.0.0.1
+2026-01-01 14:48:10,710 - security - WARNING - Login fallido: admin desde IP 127.0.0.1
+2026-01-01 14:48:59,667 - security - WARNING - Login fallido: admin desde IP 127.0.0.1
+2026-01-01 14:50:29,595 - security - INFO - Login exitoso: admin
+2026-01-01 14:51:00,254 - security - INFO - Login exitoso: admin
+2026-01-01 15:05:31,574 - security - INFO - Login exitoso: admin
+2026-01-01 15:05:42,927 - security - INFO - Login exitoso: admin
+2026-01-01 15:18:15,069 - security - INFO - Login exitoso: admin
+2026-01-01 15:22:58,781 - security - WARNING - Login fallido: Admin desde IP 127.0.0.1
+2026-01-01 15:23:04,983 - security - INFO - Login exitoso: admin
+2026-01-01 15:32:18,003 - security - INFO - Login exitoso: admin
+2026-01-01 15:56:43,056 - security - INFO - Login exitoso: admin
+2026-01-01 15:59:06,954 - security - INFO - Login exitoso: admin
+2026-01-01 16:12:05,145 - security - INFO - Login exitoso: admin
+2026-01-01 16:18:23,977 - security - WARNING - Login fallido: admin desde IP 127.0.0.1
+2026-01-01 16:18:31,394 - security - INFO - Login exitoso: admin
+2026-01-01 16:27:57,121 - security - INFO - Login exitoso: admin
