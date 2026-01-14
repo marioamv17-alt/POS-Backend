@@ -1,11 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 from decimal import Decimal
-
-# 1. Corregir Importaciones de Modelos (Añadir PriceHistory)
 from models import Product, PriceHistory 
-
-# 2. Importar utilidades de base de datos y caché
 from database import unit_of_work
 from app.core.cache import get_cached, set_cached
 

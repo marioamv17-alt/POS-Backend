@@ -90,10 +90,12 @@ class ProductRepository:
         ).offset(skip).limit(limit).all()
     
     def search(
-        self, 
-        query: str, 
-        limit: int = 100
-    ) -> List[Product]:
+        self,
+        query: str,
+        limit: int = 100,
+        include_inactive: bool = False
+    )   -> List[Product]:
+
         """
         Busca productos por nombre, código o código de barras.
         
@@ -106,17 +108,19 @@ class ProductRepository:
         """
         search_pattern = f"%{query}%"
         
-        return self.db.query(Product).filter(
-            and_(
-                Product.Activo == 1,
-                or_(
-                    Product.Product.ilike(search_pattern),
-                    cast(Product.Code, String).ilike(search_pattern),
-                    cast(Product.Barcode, String).ilike(search_pattern)
-                )
-            )
-        ).limit(limit).all()
-    
+        filters = [
+        or_(
+            Product.Product.ilike(search_pattern),
+            cast(Product.Code, String).ilike(search_pattern),
+            cast(Product.Barcode, String).ilike(search_pattern)
+         )
+        ]
+
+        if not include_inactive:
+            filters.append(Product.Activo == 1)
+
+        return self.db.query(Product).filter(and_(*filters)).limit(limit).all()
+
     def exists_by_code(self, code: str, exclude_id: Optional[int] = None) -> bool:
         """
         Verifica si existe un producto con el código dado.
