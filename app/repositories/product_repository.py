@@ -89,37 +89,27 @@ class ProductRepository:
             Product.Activo == 1
         ).offset(skip).limit(limit).all()
     
-    def search(
-        self,
-        query: str,
-        limit: int = 100,
-        include_inactive: bool = False
-    )   -> List[Product]:
+def get_all(self, skip: int = 0, limit: int = 100) -> List[Product]:
+    """Obtiene todos los productos (activos e inactivos)"""
+    return (
+        self.db.query(Product)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
-        """
-        Busca productos por nombre, código o código de barras.
-        
-        Args:
-            query: Texto a buscar
-            limit: Máximo de resultados
-            
-        Returns:
-            Lista de productos que coinciden
-        """
-        search_pattern = f"%{query}%"
-        
-        filters = [
-        or_(
-            Product.Product.ilike(search_pattern),
-            cast(Product.Code, String).ilike(search_pattern),
-            cast(Product.Barcode, String).ilike(search_pattern)
-         )
-        ]
+def search(self, query: str, include_inactive: bool = False, limit: int = 100) -> List[Product]:
+    search_pattern = f"%{query}%"
+    base_filter = or_(
+        Product.Product.ilike(search_pattern),
+        cast(Product.Code, String).ilike(search_pattern),
+        cast(Product.Barcode, String).ilike(search_pattern),
+    )
+    q = self.db.query(Product).filter(base_filter)
+    if not include_inactive:
+        q = q.filter(Product.Activo == 1)
+    return q.limit(limit).all()
 
-        if not include_inactive:
-            filters.append(Product.Activo == 1)
-
-        return self.db.query(Product).filter(and_(*filters)).limit(limit).all()
 
     def exists_by_code(self, code: str, exclude_id: Optional[int] = None) -> bool:
         """

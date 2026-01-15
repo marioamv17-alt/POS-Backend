@@ -48,52 +48,22 @@ class ProductService:
         
         return producto
     
-    def get_all_products(
-        self, 
-        skip: int = 0, 
-        limit: int = 100
-    ) -> List[Product]:
-        """
-        Obtiene todos los productos activos.
-        
-        Args:
-            skip: Registros a saltar
-            limit: Máximo de registros
-            
-        Returns:
-            Lista de productos activos
-        """
-        # Validar límites
+    def get_all_products(self, skip: int = 0, limit: int = 100, include_inactive: bool = False) -> List[Product]:
         if limit > 500:
             limit = 500
-        
-        return self.repository.get_all_active(skip, limit)
-    
-    def search_products(self, query: str) -> List[Product]:
-        """
-        Busca productos con validaciones.
-        
-        Args:
-            query: Texto a buscar
-            
-        Returns:
-            Lista de productos encontrados
-            
-        Raises:
-            ValidationError: Si el query es inválido
-        """
-        # Validaciones
+        if include_inactive:
+            return self.repository.get_all(skip, limit)
+        else:
+            return self.repository.get_all_active(skip, limit)
+
+    def search_products(self, query: str, include_inactive: bool = False) -> List[Product]:
         if not query or len(query.strip()) == 0:
             raise ValidationError("query", "El término de búsqueda no puede estar vacío")
-        
         if len(query) > 100:
             raise ValidationError("query", "El término de búsqueda es demasiado largo")
-        
-        # Sanitizar input
         query = query.strip()
-        
-        return self.repository.search(query)
-    
+        return self.repository.search(query, include_inactive=include_inactive)
+
     def create_product(self, producto_data: ProductoCreate) -> Product:
         """
         Crea un nuevo producto con validaciones de negocio.

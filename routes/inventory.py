@@ -1,21 +1,9 @@
-"""
-Rutas de inventario usando el patrón Service Layer.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
-
-# Importar dependencias de base de datos
 from database import get_db
-
-# Importar schemas de Pydantic
 from schemas import ProductoSchema, ProductoCreate, ProductoUpdate
-
-# Importar el service
 from app.services.product_service import ProductService
-
-# Importar excepciones
 from app.core.exceptions import (
     AppException,
     NotFoundError,
@@ -29,42 +17,25 @@ router = APIRouter(prefix="/api/inventario", tags=["Inventario"])
 # ==================== LISTAR PRODUCTOS ====================
 @router.get("", response_model=List[ProductoSchema])
 def obtener_inventario(
-    skip: int = Query(0, ge=0, description="Registros a saltar"),
-    limit: int = Query(100, ge=1, le=500, description="Máximo de registros"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    include_inactive: bool = Query(False, description="Incluir productos inactivos"),
     db: Session = Depends(get_db)
 ):
-    """
-    Obtiene todos los productos activos del inventario.
-    
-    - **skip**: Paginación - registros a saltar
-    - **limit**: Máximo de registros a retornar (máx: 500)
-    """
-    try:
-        service = ProductService(db)
-        productos = service.get_all_products(skip=skip, limit=limit)
-        return productos
-    except AppException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message)
-
+    service = ProductService(db)
+    productos = service.get_all_products(skip=skip, limit=limit, include_inactive=include_inactive)
+    return productos
 
 # ==================== BUSCAR PRODUCTOS ====================
 @router.get("/buscar", response_model=List[ProductoSchema])
 def buscar_productos(
-    query: str = Query(..., min_length=1, description="Término de búsqueda"),
+    query: str = Query(..., min_length=1),
+    include_inactive: bool = Query(False, description="Incluir productos inactivos"),
     db: Session = Depends(get_db)
 ):
-    """
-    Busca productos por nombre, código o código de barras.
-    
-    - **query**: Término de búsqueda (mínimo 1 carácter)
-    """
-    try:
-        service = ProductService(db)
-        productos = service.search_products(query)
-        return productos
-    except AppException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message)
-
+    service = ProductService(db)
+    productos = service.search_products(query, include_inactive=include_inactive)
+    return productos
 
 # ==================== OBTENER UN PRODUCTO ====================
 @router.get("/{product_id}", response_model=ProductoSchema)
