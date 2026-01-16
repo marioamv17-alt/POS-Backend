@@ -47,7 +47,7 @@ def obtener_inventario(
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
-# ==================== BUSCAR PRODUCTOS ====================
+# ==================== BUSCAR PRODUCTOS ==================== Modificado por MArio
 @router.get("/buscar", response_model=List[ProductoSchema])
 def buscar_productos(
     query: str = Query(..., min_length=1),

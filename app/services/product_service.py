@@ -69,6 +69,8 @@ class ProductService:
         
         return self.repository.get_all_active(skip, limit)
     
+    #Modificado por MArio
+    
     def search_products(self, query: str, include_inactive: bool = False) -> List[Product]:
         """
         Busca productos con validaciones.
