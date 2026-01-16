@@ -50,20 +50,16 @@ def obtener_inventario(
 # ==================== BUSCAR PRODUCTOS ====================
 @router.get("/buscar", response_model=List[ProductoSchema])
 def buscar_productos(
-    query: str = Query(..., min_length=1, description="Término de búsqueda"),
+    query: str = Query(..., min_length=1),
+    include_inactive: bool = Query(False),
     db: Session = Depends(get_db)
 ):
-    """
-    Busca productos por nombre, código o código de barras.
-    
-    - **query**: Término de búsqueda (mínimo 1 carácter)
-    """
     try:
         service = ProductService(db)
-        productos = service.search_products(query)
-        return productos
+        return service.search_products(query, include_inactive=include_inactive)
     except AppException as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
+
 
 
 # ==================== OBTENER UN PRODUCTO ====================

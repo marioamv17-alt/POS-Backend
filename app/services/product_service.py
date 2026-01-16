@@ -69,30 +69,24 @@ class ProductService:
         
         return self.repository.get_all_active(skip, limit)
     
-    def search_products(self, query: str) -> List[Product]:
+    def search_products(self, query: str, include_inactive: bool = False) -> List[Product]:
         """
         Busca productos con validaciones.
-        
-        Args:
-            query: Texto a buscar
-            
-        Returns:
-            Lista de productos encontrados
-            
-        Raises:
-            ValidationError: Si el query es inválido
+
+        include_inactive:
+        - False (default): solo activos
+        - True: activos + inactivos
         """
-        # Validaciones
         if not query or len(query.strip()) == 0:
             raise ValidationError("query", "El término de búsqueda no puede estar vacío")
-        
+
+        query = query.strip()
+
         if len(query) > 100:
             raise ValidationError("query", "El término de búsqueda es demasiado largo")
-        
-        # Sanitizar input
-        query = query.strip()
-        
-        return self.repository.search(query)
+
+        return self.repository.search(query, include_inactive=include_inactive)
+
     
     def create_product(self, producto_data: ProductoCreate) -> Product:
         """
