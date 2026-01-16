@@ -1,18 +1,30 @@
-from sqlalchemy.orm import Session
-from typing import List, Dict, Optional
-from decimal import Decimal
-from models import Product, PriceHistory 
-from database import unit_of_work
-from app.core.cache import get_cached, set_cached
+"""
+Service para lógica de negocio de productos.
+Capa de servicios - contiene reglas de negocio y validaciones.
+VERSIÓN CORREGIDA
+"""
 
+from sqlalchemy.orm import Session
+from typing import List, Dict
+from decimal import Decimal
+
+# Importar modelos
+from models import Product
+
+# Importar schemas de Pydantic
 from schemas import ProductoCreate, ProductoUpdate
+
+# Importar repository
 from app.repositories.product_repository import ProductRepository
+
+# Importar excepciones
 from app.core.exceptions import (
     NotFoundError, 
     DuplicateError, 
     ValidationError,
     InvalidOperationError
 )
+
 
 class ProductService:
     """
@@ -48,22 +60,55 @@ class ProductService:
         
         return producto
     
-    def get_all_products(self, skip: int = 0, limit: int = 100, include_inactive: bool = False) -> List[Product]:
+    def get_all_products(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        include_inactive: bool = False
+    ) -> List[Product]:
+        """
+        Obtiene todos los productos.
+        
+        Args:
+            skip: Registros a saltar
+            limit: Máximo de registros
+            include_inactive: Si True, incluye productos inactivos
+            
+        Returns:
+            Lista de productos
+        """
+        # Validar límites
         if limit > 500:
             limit = 500
-        if include_inactive:
-            return self.repository.get_all(skip, limit)
-        else:
-            return self.repository.get_all_active(skip, limit)
-
+        
+        return self.repository.get_all_active(skip, limit, include_inactive)
+    
     def search_products(self, query: str, include_inactive: bool = False) -> List[Product]:
+        """
+        Busca productos con validaciones.
+        
+        Args:
+            query: Texto a buscar
+            include_inactive: Si True, incluye productos inactivos
+            
+        Returns:
+            Lista de productos encontrados
+            
+        Raises:
+            ValidationError: Si el query es inválido
+        """
+        # Validaciones
         if not query or len(query.strip()) == 0:
             raise ValidationError("query", "El término de búsqueda no puede estar vacío")
+        
         if len(query) > 100:
             raise ValidationError("query", "El término de búsqueda es demasiado largo")
+        
+        # Sanitizar input
         query = query.strip()
+        
         return self.repository.search(query, include_inactive=include_inactive)
-
+    
     def create_product(self, producto_data: ProductoCreate) -> Product:
         """
         Crea un nuevo producto con validaciones de negocio.
@@ -284,40 +329,3 @@ class ProductService:
         # Validar categoría
         if len(data.category) < 2:
             raise ValidationError("category", "La categoría debe tener al menos 2 caracteres")
-    def create_product_with_history(self, product_data: ProductoCreate):
-        with unit_of_work(self.db) as db:
-            product = self.repository.create(product_data)
-            
-            # Crear historial
-            history = PriceHistory(
-                product_id=product.Id,
-                old_price=0,
-                new_price=product.Price,
-                reason="Producto creado"
-            )
-            db.add(history)
-            
-            return product
-def get_inventory_summary(self) -> Dict:
-        """Obtiene un resumen del inventario con soporte de caché."""
-        cached = get_cached("inventory_summary")
-        if cached:
-            return cached
-        
-        # Implementación real en lugar de _calculate_summary()
-        total_products = self.repository.count_active()
-        low_stock_products = self.repository.get_low_stock_products()
-        categories = self.repository.count_by_category()
-        
-        summary = {
-            "total_products": total_products,
-            "low_stock_count": len(low_stock_products),
-            "categories_count": categories,
-            "low_stock_details": [
-                {"id": p.Id, "name": p.Product, "stock": p.Stock}
-                for p in low_stock_products[:5]
-            ]
-        }
-        
-        set_cached("inventory_summary", summary, ttl_seconds=60)
-        return summary

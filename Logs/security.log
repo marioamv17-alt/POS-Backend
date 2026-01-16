@@ -32,3 +32,6 @@
 2026-01-14 20:20:23,691 - security - INFO - Login exitoso: admin
 2026-01-14 20:21:39,484 - security - INFO - Login exitoso: admin
 2026-01-14 20:27:45,301 - security - INFO - Login exitoso: admin
+2026-01-15 21:23:38,827 - security - INFO - Login exitoso: test_user
+2026-01-15 21:31:29,421 - security - INFO - Login exitoso: test_user
+2026-01-15 21:39:16,104 - security - INFO - Login exitoso: test_user

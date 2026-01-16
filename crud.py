@@ -58,23 +58,23 @@ def update_user_role(db: Session, user_id: int, new_role: str) -> Users:
 def obtener_productos(db: Session, skip: int = 0, limit: int = 100) -> list[Product]:
     return db.query(Product).filter(Product.Activo == 1).offset(skip).limit(limit).all()
 
-def buscar_productos(db: Session, query: str):
-    # Sanitizar entrada
-    if not re.match(r'^[\w\s\-\.]+$', query):
-        raise ValueError("Caracteres no válidos en búsqueda")
+def buscar_producto(db: Session, product_id=None, code=None, barcode=None) -> Product | None:
+    """
+    Busca un producto ACTIVO por ID, código o código de barras.
     
-    if len(query) > 100:
-        raise ValueError("Query demasiado largo")
+    IMPORTANTE: Solo retorna productos activos (Activo=1)
+    para evitar que se agreguen productos inactivos al carrito.
+    """
+    # SIEMPRE filtrar por productos activos
+    q = db.query(Product).filter(Product.Activo == 1)
     
-    # SQLAlchemy escapa automáticamente los parámetros
-    search_pattern = f"%{query}%"
-    return db.query(Product).filter(
-        or_(
-            Product.Product.ilike(search_pattern),
-            cast(Product.Code, String).ilike(search_pattern),
-            cast(Product.Barcode, String).ilike(search_pattern)
-        )
-    ).limit(100).all()
+    if product_id:
+        return q.filter(Product.Id == product_id).first()
+    if code:
+        return q.filter(cast(Product.Code, String).ilike(f"%{code}%")).first()
+    if barcode:
+        return q.filter(cast(Product.Barcode, String).ilike(f"%{barcode}%")).first()
+    return None
 
 def crear_producto(db: Session, producto: ProductoCreate) -> Product:
     try:
