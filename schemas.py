@@ -276,7 +276,7 @@ class CreateWithdrawalRequest(BaseModel):
     @field_validator('reason')
     @classmethod
     def validate_reason(cls, v):
-        allowed = ['security_limit', 'end_of_shift', 'deposit', 'other']
+        allowed = ['security_limit', 'end_of_shift', 'deposit', 'other', 'supplier_payment']
         if v not in allowed:
             raise ValueError(f'Razón debe ser: {", ".join(allowed)}')
         return v

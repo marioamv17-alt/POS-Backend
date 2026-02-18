@@ -103,8 +103,8 @@ class CartService:
         
         # Buscar producto
         product = self._find_product(request)
-        if not product:
-            raise NotFoundError("Producto", "especificado")
+        if not product or product.Activo != 1:
+            raise NotFoundError("Producto", "no disponible para venta")
         
         # Validar stock
         if product.Stock < float(request.quantity):
@@ -298,14 +298,11 @@ class CartService:
             Product encontrado o None
         """
         if request.product_id:
-            return self.product_repo.get_by_id(request.product_id)
-        
-        if request.code:
-            return self.product_repo.get_by_code(str(request.code))
-        
-        if request.barcode:
-            return self.product_repo.get_by_barcode(str(request.barcode))
-        
+             return self.db.query(Product).filter(Product.Id == request.product_id).first()
+        elif request.code:
+             return self.db.query(Product).filter(Product.Code == request.code).first()
+        elif request.barcode:
+                return self.db.query(Product).filter(Product.Barcode == request.barcode).first()
         return None
     
     def _calculate_total(self, cart: Cart) -> Decimal:

@@ -2,15 +2,14 @@
 """
 Service para lógica de negocio de tickets de venta.
 """
-
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload 
 from typing import List, Optional, Dict
 from datetime import datetime, UTC
 from decimal import Decimal
 
 from models import SaleTicket, SaleTicketItem, Cart, Product, CashRegister
-from schemas import CreateTicketRequest
-from schemas_pagination import PaginationParams, PaginatedResponse
+from schemas import CreateTicketRequest, SaleTicketSchema
+from schemas_pagination import PaginationParams, TicketPaginatedResponse, create_pagination_meta
 from app.repositories.ticket_repository import TicketRepository, TicketItemRepository
 from app.repositories.cart_repository import CartRepository
 from app.repositories.product_repository import ProductRepository
@@ -191,7 +190,7 @@ class TicketService(PaginationMixin):
         payment_method: Optional[str] = None,
         min_total: Optional[float] = None,
         max_total: Optional[float] = None
-    ) -> PaginatedResponse[SaleTicket]:
+    ) -> TicketPaginatedResponse:
         """
         Lista tickets con paginación mejorada.
         
@@ -204,7 +203,7 @@ class TicketService(PaginationMixin):
         """
         # Construir query base
         query = self.db.query(SaleTicket).options(
-            self.ticket_repo.db.query(SaleTicket)._joinedload(SaleTicket.cashier)
+            joinedload(SaleTicket.cashier)
         )
         
         # Aplicar filtros
@@ -238,7 +237,13 @@ class TicketService(PaginationMixin):
         # Paginar
         tickets, total = self.paginate_query(query, pagination)
         
-        return self.create_paginated_response(tickets, total, pagination)
+        ticket_schemas = [SaleTicketSchema.model_validate(t, from_attributes=True) for t in tickets]
+
+        return TicketPaginatedResponse(
+        tickets=tickets,
+        meta=create_pagination_meta(total, pagination.page, pagination.page_size)
+    )
+
     
     def list_tickets(
         self,

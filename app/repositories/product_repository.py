@@ -1,9 +1,3 @@
-"""
-Repository para operaciones de base de datos de productos.
-Capa de acceso a datos - solo consultas SQL, sin lógica de negocio.
-VERSIÓN CORREGIDA - con todos los métodos necesarios
-"""
-
 from sqlalchemy.orm import Session
 from sqlalchemy import cast, String, or_, and_
 from typing import List, Optional
@@ -95,54 +89,26 @@ class ProductRepository:
         
         return query.offset(skip).limit(limit).all()
     
-    def search(
-        self, 
-        query: str, 
-        limit: int = 100,
-        include_inactive: bool = False
-    ) -> List[Product]:
-        """
-        Busca productos por nombre, código o código de barras.
-        
-        Args:
-            query: Texto a buscar
-            limit: Máximo de resultados
-            include_inactive: Si True, incluye productos inactivos
-            
-        Returns:
-            Lista de productos que coinciden
-        """
+    def search(self, query: str, include_inactive: bool = False, limit: int = 100) -> List[Product]:
         search_pattern = f"%{query}%"
-        
-        filters = or_(
+        base_filter = or_(
             Product.Product.ilike(search_pattern),
             cast(Product.Code, String).ilike(search_pattern),
-            cast(Product.Barcode, String).ilike(search_pattern)
+            cast(Product.Barcode, String).ilike(search_pattern),
         )
-        
+
+        q = self.db.query(Product).filter(base_filter)
+
         if not include_inactive:
-            filters = and_(Product.Activo == 1, filters)
-        
-        return self.db.query(Product).filter(filters).limit(limit).all()
+            q = q.filter(Product.Activo == 1)
+
+        return q.limit(limit).all()
+
     
     def exists_by_code(self, code: str, exclude_id: Optional[int] = None) -> bool:
-        """
-        Verifica si existe un producto con el código dado.
-        
-        Args:
-            code: Código a verificar
-            exclude_id: ID de producto a excluir (para updates)
-            
-        Returns:
-            True si existe, False si no
-        """
-        query = self.db.query(Product).filter(
-            cast(Product.Code, String) == str(code)
-        )
-        
+        query = self.db.query(Product).filter(cast(Product.Code, String) == str(code))
         if exclude_id:
             query = query.filter(Product.Id != exclude_id)
-        
         return query.first() is not None
     
     def exists_by_barcode(

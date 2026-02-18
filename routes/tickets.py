@@ -18,7 +18,7 @@ from schemas import (
     SaleTicketItemSchema,
     CancelTicketRequest
 )
-from schemas_pagination import PaginationParams, PaginatedResponse
+from schemas_pagination import PaginationParams, PaginatedResponse, TicketPaginatedResponse
 from app.core.exceptions import AppException, NotFoundError
 import crud_cash_register
 
@@ -200,7 +200,7 @@ def get_ticket_by_number(
 
 
 # ==================== LISTAR TICKETS CON PAGINACIÓN ====================
-@router.get("/", response_model=PaginatedResponse[SaleTicketSchema])
+@router.get("/", response_model=TicketPaginatedResponse)
 def list_tickets_paginated(
     page: int = Query(1, ge=1, description="Número de página"),
     page_size: int = Query(50, ge=1, le=100, description="Registros por página"),

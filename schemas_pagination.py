@@ -1,7 +1,7 @@
 """
 Schemas para paginación mejorada con metadatos completos.
 """
-
+from schemas import SaleTicketSchema 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Generic, TypeVar, List, Optional
 from math import ceil
@@ -22,13 +22,20 @@ class PaginationMeta(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
 
-
 class PaginatedResponse(BaseModel, Generic[T]):
     """Respuesta paginada genérica"""
     data: List[T] = Field(..., description="Lista de resultados")
     meta: PaginationMeta = Field(..., description="Metadatos de paginación")
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+class TicketPaginatedResponse(BaseModel):
+    """Respuesta paginada específica para tickets"""
+    tickets: List[SaleTicketSchema] = Field(..., description="Lista de tickets")  # ✅ usar schema Pydantic
+    meta: PaginationMeta = Field(..., description="Metadatos de paginación")
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 
 class PaginationParams(BaseModel):
@@ -86,7 +93,7 @@ def paginate(
     total: int,
     page: int,
     page_size: int
-) -> PaginatedResponse[T]:
+) -> TicketPaginatedResponse[T]:
     """
     Envuelve una lista en una respuesta paginada.
     
@@ -101,7 +108,7 @@ def paginate(
     """
     meta = create_pagination_meta(total, page, page_size)
     
-    return PaginatedResponse(
-        data=items,
+    return TicketPaginatedResponse(
+        tickets=items,
         meta=meta
     )

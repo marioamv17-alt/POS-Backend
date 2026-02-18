@@ -1,7 +1,6 @@
 """
 Service para lógica de negocio de productos.
 Capa de servicios - contiene reglas de negocio y validaciones.
-VERSIÓN CORREGIDA
 """
 
 from sqlalchemy.orm import Session
@@ -198,6 +197,10 @@ class ProductService:
             if update_dict["min_stock"] < 0:
                 raise ValidationError("min_stock", "El stock mínimo no puede ser negativo")
             producto.Min_Stock = update_dict["min_stock"]
+        if "activo" in update_dict:
+            if update_dict["activo"] not in (0, 1):
+                raise ValidationError("activo", "El valor de activo debe ser 0 o 1")
+            producto.Activo = update_dict["activo"]
         
         return self.repository.update(producto)
     
